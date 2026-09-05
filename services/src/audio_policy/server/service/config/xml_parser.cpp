@@ -16,6 +16,7 @@
 #include "audio_log.h"
 
 #include "xml_parser.h"
+#include "parse_latency_int.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -287,21 +288,45 @@ std::string XMLParser::ExtractPropertyValue(const std::string &propName, xmlNode
 void XMLParser::ParseAudioLatency(xmlNode &node)
 {
     xmlNode *child = node.children;
+    if (child == nullptr) {
+        AUDIO_ERR_LOG("ParseAudioLatency: missing content");
+        return;
+    }
     xmlChar *audioLatency = xmlNodeGetContent(child);
-    std::string sAudioLatency(reinterpret_cast<char *>(audioLatency));
-    mPortObserver.OnAudioLatencyParsed((uint64_t)std::stoi(sAudioLatency));
-
+    if (audioLatency == nullptr) {
+        AUDIO_ERR_LOG("ParseAudioLatency: empty content");
+        return;
+    }
+    uint64_t latency = 0;
+    bool ok = ParseLatencyU64(reinterpret_cast<const char *>(audioLatency), latency);
     xmlFree(audioLatency);
+    if (!ok) {
+        AUDIO_ERR_LOG("ParseAudioLatency: invalid latency");
+        return;
+    }
+    mPortObserver.OnAudioLatencyParsed(latency);
 }
 
 void XMLParser::ParseSinkLatency(xmlNode &node)
 {
     xmlNode *child = node.children;
+    if (child == nullptr) {
+        AUDIO_ERR_LOG("ParseSinkLatency: missing content");
+        return;
+    }
     xmlChar *latency = xmlNodeGetContent(child);
-    std::string sLatency(reinterpret_cast<char *>(latency));
-    mPortObserver.OnSinkLatencyParsed((uint64_t)std::stoi(sLatency));
-
+    if (latency == nullptr) {
+        AUDIO_ERR_LOG("ParseSinkLatency: empty content");
+        return;
+    }
+    uint64_t value = 0;
+    bool ok = ParseLatencyU64(reinterpret_cast<const char *>(latency), value);
     xmlFree(latency);
+    if (!ok) {
+        AUDIO_ERR_LOG("ParseSinkLatency: invalid latency");
+        return;
+    }
+    mPortObserver.OnSinkLatencyParsed(value);
 }
 } // namespace AudioStandard
 } // namespace OHOS
